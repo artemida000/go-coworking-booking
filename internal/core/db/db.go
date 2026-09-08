@@ -12,7 +12,7 @@ import (
 func New(cfg *config.Confing) (*pgxpool.Pool, error) {
 
 	// формируем строку подключения
-	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmodel=%s",
+	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
 	cfg.DBUser, cfg.DBPassword, cfg.DBHost, cfg.DBPort, cfg.DBName, cfg.DBSslmode)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

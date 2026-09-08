@@ -1,13 +1,14 @@
 package main
 
 import (
-	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
 
 	"github.com/artemida000/go-coworking-booking/internal/core/config"
 	"github.com/artemida000/go-coworking-booking/internal/core/db"
 	"github.com/artemida000/go-coworking-booking/internal/core/logger"
+	"github.com/artemida000/go-coworking-booking/internal/feature/user"
 )
 
 func main() {
@@ -37,5 +38,20 @@ func main() {
 
 	log.Info("Successfully connected to PostgreSQL!")
 
-	fmt.Printf("Configuration loaded successfully! Server will run on port: %s\n", cfg.Port)
+	userRepo := user.NewRepository(dbPool)
+	userService := user.NewService(userRepo)
+	userHandler := user.NewHandler(userService, cfg.JWTSecret)
+
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("POST /api/register", userHandler.Register)
+	mux.HandleFunc("POST /api/login", userHandler.Login)
+
+	addr := ":" + cfg.Port
+	log.Info("Server is listening", slog.String("addr", addr))
+
+	if err := http.ListenAndServe(addr, mux); err != nil {
+		log.Error("Server failed", slog.Any("error", err))
+		os.Exit(1)
+	}
 }
