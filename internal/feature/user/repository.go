@@ -45,7 +45,7 @@ func (r *Repository) GetEmail(ctx context.Context, email string) (*User, error) 
 	query := `
 		SELECT id, email, password_hash, role
 		FROM users
-		Where email = $1
+		WHERE email = $1
 	`
 
 	var user User
