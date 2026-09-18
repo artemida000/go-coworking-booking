@@ -8,6 +8,8 @@ import (
 	"github.com/artemida000/go-coworking-booking/internal/core/config"
 	"github.com/artemida000/go-coworking-booking/internal/core/db"
 	"github.com/artemida000/go-coworking-booking/internal/core/logger"
+	"github.com/artemida000/go-coworking-booking/internal/core/middleware"
+	"github.com/artemida000/go-coworking-booking/internal/feature/space"
 	"github.com/artemida000/go-coworking-booking/internal/feature/user"
 )
 
@@ -23,9 +25,9 @@ func main() {
 	// инициализируем логер
 	log := logger.Setup(cfg.Env)
 
-	log.Info("Starting Coworking Booking API...", 
-	slog.String("env", cfg.Env), 
-	slog.String("port", cfg.Port),)
+	log.Info("Starting Coworking Booking API...",
+		slog.String("env", cfg.Env),
+		slog.String("port", cfg.Port))
 
 	// подключение к бд
 	dbPool, err := db.New(cfg)
@@ -42,10 +44,22 @@ func main() {
 	userService := user.NewService(userRepo)
 	userHandler := user.NewHandler(userService, cfg.JWTSecret)
 
+	spaceRepo := space.NewRepository(dbPool)
+	spaceService := space.NewService(spaceRepo)
+	spaceHandler := space.NewHandler(spaceService)
+
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("POST /api/register", userHandler.Register)
 	mux.HandleFunc("POST /api/login", userHandler.Login)
+
+	authMiddleware := middleware.Auth(cfg.JWTSecret)
+
+	protectedSpaceCreate := authMiddleware(
+		middleware.RequireRole("admin")(http.HandlerFunc(spaceHandler.Create)),
+	)
+
+	mux.Handle("POST /api/spaces", protectedSpaceCreate)
 
 	addr := ":" + cfg.Port
 	log.Info("Server is listening", slog.String("addr", addr))
