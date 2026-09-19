@@ -38,3 +38,40 @@ func (r *Repository) Create(ctx context.Context, name, address, description stri
 
 	return id, nil
 }
+
+func (r *Repository) GetAll(ctx context.Context) ([]Space, error) {
+	query := `
+		SELECT id, name, address, description
+		FROM spaces
+	`
+	rows, err := r.db.Query(ctx, query)
+
+	if err != nil {
+		return nil, err
+	}
+	
+	defer rows.Close()
+
+	var spaces []Space
+
+	for rows.Next() {
+		var s Space
+
+		err := rows.Scan(&s.ID, &s.Name, &s.Address, &s.Description)
+		if err != nil {
+			return nil, err
+		}
+
+		spaces = append(spaces, s)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	if spaces == nil {
+		spaces = []Space{}
+	}
+
+	return spaces, nil
+}

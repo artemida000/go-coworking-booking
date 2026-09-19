@@ -53,3 +53,27 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(resp)
 }
+
+type GetAllsSpaceResponce struct {
+	Spaces []Space `json:"spaces"`
+}
+
+func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
+	spaces, err := h.service.GetAllSpace(r.Context())
+
+	if err != nil {
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	resp := GetAllsSpaceResponce{
+		Spaces: spaces,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, "failed to encode responce", http.StatusInternalServerError)
+	}
+}

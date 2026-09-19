@@ -60,6 +60,7 @@ func main() {
 	)
 
 	mux.Handle("POST /api/spaces", protectedSpaceCreate)
+	mux.Handle("GET /api/spaces", authMiddleware(http.HandlerFunc(spaceHandler.GetAll)))
 
 	addr := ":" + cfg.Port
 	log.Info("Server is listening", slog.String("addr", addr))

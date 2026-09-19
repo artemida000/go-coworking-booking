@@ -27,3 +27,13 @@ func (s *Service) CreateSpace(ctx context.Context, name, address, description st
 
 	return id, nil
 }
+
+func (s *Service) GetAllSpace(ctx context.Context) ([]Space, error) {
+	spaces, err := s.repo.GetAll(ctx)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get spaces fron db: %w", err)
+	}
+
+	return spaces, nil
+}
