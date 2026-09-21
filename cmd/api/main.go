@@ -9,6 +9,7 @@ import (
 	"github.com/artemida000/go-coworking-booking/internal/core/db"
 	"github.com/artemida000/go-coworking-booking/internal/core/logger"
 	"github.com/artemida000/go-coworking-booking/internal/core/middleware"
+	"github.com/artemida000/go-coworking-booking/internal/feature/room"
 	"github.com/artemida000/go-coworking-booking/internal/feature/space"
 	"github.com/artemida000/go-coworking-booking/internal/feature/user"
 )
@@ -48,6 +49,10 @@ func main() {
 	spaceService := space.NewService(spaceRepo)
 	spaceHandler := space.NewHandler(spaceService)
 
+	roomRepo := room.NewRepository(dbPool)
+	roomService := room.NewService(roomRepo)
+	roomHandler := room.NewHandler(roomService)
+
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("POST /api/register", userHandler.Register)
@@ -59,8 +64,14 @@ func main() {
 		middleware.RequireRole("admin")(http.HandlerFunc(spaceHandler.Create)),
 	)
 
+	protectedRoomCreate := authMiddleware(
+		middleware.RequireRole("admin")(http.HandlerFunc(roomHandler.Create)),
+	)
+
 	mux.Handle("POST /api/spaces", protectedSpaceCreate)
+	mux.Handle("POST /api/rooms", protectedRoomCreate)
 	mux.Handle("GET /api/spaces", authMiddleware(http.HandlerFunc(spaceHandler.GetAll)))
+	mux.Handle("GET /api/spaces/{id}/rooms", authMiddleware(http.HandlerFunc(roomHandler.GetAll)))
 
 	addr := ":" + cfg.Port
 	log.Info("Server is listening", slog.String("addr", addr))
