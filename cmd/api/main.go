@@ -9,6 +9,7 @@ import (
 	"github.com/artemida000/go-coworking-booking/internal/core/db"
 	"github.com/artemida000/go-coworking-booking/internal/core/logger"
 	"github.com/artemida000/go-coworking-booking/internal/core/middleware"
+	"github.com/artemida000/go-coworking-booking/internal/feature/booking"
 	"github.com/artemida000/go-coworking-booking/internal/feature/room"
 	"github.com/artemida000/go-coworking-booking/internal/feature/space"
 	"github.com/artemida000/go-coworking-booking/internal/feature/user"
@@ -16,21 +17,18 @@ import (
 
 func main() {
 
-	// передаем переменные окружения
 	cfg, err := config.Load()
 	if err != nil {
 		slog.Error("Failed to load config", slog.Any("error", err))
 		os.Exit(1)
 	}
 
-	// инициализируем логер
 	log := logger.Setup(cfg.Env)
 
 	log.Info("Starting Coworking Booking API...",
 		slog.String("env", cfg.Env),
 		slog.String("port", cfg.Port))
 
-	// подключение к бд
 	dbPool, err := db.New(cfg)
 	if err != nil {
 		log.Error("Failed to connect to database", slog.Any("error", err))
@@ -53,6 +51,10 @@ func main() {
 	roomService := room.NewService(roomRepo)
 	roomHandler := room.NewHandler(roomService)
 
+	bookingRepo := booking.NewRepository(dbPool)
+	bookingService := booking.NewService(bookingRepo)
+	bookingHandler := booking.NewHandler(bookingService)
+
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("POST /api/register", userHandler.Register)
@@ -72,6 +74,9 @@ func main() {
 	mux.Handle("POST /api/rooms", protectedRoomCreate)
 	mux.Handle("GET /api/spaces", authMiddleware(http.HandlerFunc(spaceHandler.GetAll)))
 	mux.Handle("GET /api/spaces/{id}/rooms", authMiddleware(http.HandlerFunc(roomHandler.GetAll)))
+	mux.Handle("POST /api/bookings", authMiddleware(http.HandlerFunc(bookingHandler.Create)))
+	mux.Handle("GET /api/bookings/my", authMiddleware(http.HandlerFunc(bookingHandler.GetMyBookings)))
+	mux.Handle("DELETE /api/bookings/{id}", authMiddleware(http.HandlerFunc(bookingHandler.Cancel)))
 
 	addr := ":" + cfg.Port
 	log.Info("Server is listening", slog.String("addr", addr))
