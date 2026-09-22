@@ -22,9 +22,8 @@ type Confing struct {
 
 func Load() (*Confing, error) {
 
-	if err:= godotenv.Load(); err != nil {
-		return nil, err
-	}
+	_ = godotenv.Load()
+	
 	cfg := &Confing{
 		Port: os.Getenv("PORT"),
 		Env: os.Getenv("ENV"),

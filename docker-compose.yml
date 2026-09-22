@@ -13,6 +13,36 @@ services:
       - "${DB_PORT}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: coworking_api
+    restart: always
+    ports:
+      - "${PORT}:${PORT}" # Пробрасываем порт 8080 на твой Mac
+    environment:
+      - PORT=${PORT}
+      - ENV=${ENV}
+      # ВНИМАНИЕ: имя хоста базы внутри Docker-сети — это имя сервиса "db", а не localhost!
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_SSLMODE=${DB_SSLMODE}
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      - db # Запускать app только ПОСЛЕ того, как стартует база
+    networks:
+      - app-network
 
 volumes:
   postgres_data:
+
+networks:
+  app-network:
+    driver: bridge
