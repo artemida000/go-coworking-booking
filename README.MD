@@ -1,4 +1,3 @@
-cat << 'EOF' > README.md
 # Coworking Space Reservation System (REST API)
 
 Бэкенд-сервис для бронирования рабочих мест и переговорных комнат в коворкингах. 
